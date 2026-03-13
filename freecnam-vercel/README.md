@@ -29,10 +29,28 @@ freecnam-vercel/
 4. Click "Deploy" — no settings to change, Vercel auto-detects everything
 5. In ~60 seconds you get a live URL like: `cnam-tool.vercel.app`
 
-### Step 3 — Add your custom domain (optional)
-1. In Vercel project settings → "Domains"
-2. Add your domain (e.g. `cnam.yourdomain.com`)
-3. Vercel gives you DNS records to add in your domain registrar
+### Step 3 — Add your custom domain (Squarespace)
+
+**In Vercel first:**
+1. Open your project on Vercel → go to **Settings → Domains**
+2. Type `cnam.yourdomain.com` (replace with your actual domain) and click **Add**
+3. Vercel will display a CNAME record — copy these two values:
+   - **Name:** `cnam`
+   - **Value:** `cname.vercel-dns.com`
+
+**Then in Squarespace:**
+1. Log into Squarespace → go to **Domains** → click your domain
+2. Click **DNS Settings**
+3. Scroll down to **Custom Records**
+4. Click **Add Record** and fill in:
+   - **Type:** `CNAME`
+   - **Host:** `cnam`
+   - **Data:** `cname.vercel-dns.com`
+   - **TTL:** leave as default
+5. Click **Save**
+
+DNS usually propagates within 15-30 minutes on Squarespace.
+Once live, your team accesses the tool at: https://cnam.yourdomain.com
 
 ## Features
 - Single number CNAM lookup
