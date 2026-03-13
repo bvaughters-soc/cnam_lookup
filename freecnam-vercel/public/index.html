@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CNAM Lookup — Voice Tech Tools</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080b10;
+      --surface: #0f1318;
+      --surface2: #151a22;
+      --border: #1e2630;
+      --border2: #28333f;
+      --accent: #00d4ff;
+      --accent-dim: rgba(0, 212, 255, 0.12);
+      --accent-glow: rgba(0, 212, 255, 0.25);
+      --green: #00e5a0;
+      --green-dim: rgba(0, 229, 160, 0.12);
+      --warn: #ff5f5f;
+      --warn-dim: rgba(255, 95, 95, 0.12);
+      --yellow: #ffd060;
+      --text: #c8d8e8;
+      --text2: #7a8fa8;
+      --text3: #3d5068;
+      --mono: 'Share Tech Mono', monospace;
+      --sans: 'DM Sans', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* Scanline effect */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* Top bar */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .topbar-divider {
+      width: 1px;
+      height: 20px;
+      background: var(--border2);
+    }
+
+    .topbar-title {
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .status-text {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--green);
+      letter-spacing: 1px;
+    }
+
+    /* Main layout */
+    .main {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+
+    /* Page header */
+    .page-header {
+      margin-bottom: 32px;
+    }
+
+    .page-header h1 {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: clamp(24px, 4vw, 36px);
+      color: #fff;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .page-header h1 span { color: var(--accent); }
+
+    .page-header p {
+      font-size: 14px;
+      color: var(--text2);
+      font-weight: 300;
+    }
+
+    /* Lookup card */
+    .lookup-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 24px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .lookup-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+    }
+
+    .lookup-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--text3);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .input-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--accent);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    input[type="tel"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 20px;
+      letter-spacing: 3px;
+      padding: 13px 14px 13px 38px;
+      border-radius: 5px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    input[type="tel"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    input[type="tel"]::placeholder {
+      color: var(--text3);
+      letter-spacing: 2px;
+      font-size: 16px;
+    }
+
+    .lookup-btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      padding: 13px 28px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background .15s, box-shadow .15s, transform .1s;
+      white-space: nowrap;
+    }
+
+    .lookup-btn:hover:not(:disabled) {
+      background: #33ddff;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .lookup-btn:active:not(:disabled) { transform: scale(.97); }
+    .lookup-btn:disabled { background: var(--border2); color: var(--text3); cursor: not-allowed; }
+
+    .input-hint {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: var(--mono);
+      letter-spacing: 0.5px;
+    }
+
+    /* Bulk toggle */
+    .mode-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 20px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px;
+      width: fit-content;
+    }
+
+    .mode-tab {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 7px 18px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      background: none;
+      color: var(--text2);
+      transition: background .15s, color .15s;
+    }
+
+    .mode-tab.active {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid rgba(0,212,255,0.2);
+    }
+
+    /* Single result */
+    .result-box {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      animation: slideIn .2s ease;
+    }
+
+    .result-box.visible { display: block; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-bar {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 9px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .result-bar-left {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--text3);
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 1px;
+      padding: 3px 9px;
+      border-radius: 20px;
+    }
+
+    .pill-ok   { background: var(--green-dim); color: var(--green); }
+    .pill-err  { background: var(--warn-dim);  color: var(--warn); }
+    .pill-none { background: rgba(255,208,96,.1); color: var(--yellow); }
+
+    .result-body { padding: 20px 16px; }
+
+    .result-number-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+    }
+
+    .result-number-val {
+      font-family: var(--mono);
+      font-size: 15px;
+      color: var(--text2);
+      margin-bottom: 14px;
+      letter-spacing: 2px;
+    }
+
+    .cnam-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .cnam-value {
+      font-family: var(--mono);
+      font-size: 32px;
+      font-weight: bold;
+      color: var(--accent);
+      letter-spacing: 1px;
+      word-break: break-all;
+      line-height: 1.1;
+    }
+
+    .cnam-value.no-data { color: var(--yellow); font-size: 22px; }
+    .cnam-value.error   { color: var(--warn);   font-size: 16px; line-height: 1.5; }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .meta-cell {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 9px 12px;
+    }
+
+    .meta-cell.full { grid-column: 1 / -1; }
+
+    .meta-cell p {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--text3);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    .meta-cell code {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text2);
+      word-break: break-all;
+    }
+
+    /* Loading */
+    .loading-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 22px 16px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+      letter-spacing: 1px;
+    }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--accent-dim);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Bulk mode */
+    .bulk-section { display: none; }
+    .bulk-section.visible { display: block; }
+
+    textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 14px;
+      letter-spacing: 1px;
+      line-height: 1.8;
+      padding: 14px;
+      border-radius: 5px;
+      outline: none;
+      resize: vertical;
+      min-height: 120px;
+      transition: border-color .2s;
+    }
+
+    textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+    textarea::placeholder { color: var(--text3); }
+
+    .bulk-btn {
+      margin-top: 10px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 13px;
+      padding: 11px 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .bulk-btn:hover:not(:disabled) { background: #33ddff; }
+    .bulk-btn:disabled { background: var(--border2); color: var(--text3); cursor: not-allowed; }
+
+    .bulk-results {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .bulk-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 14px;
+      display: grid;
+      grid-template-columns: 160px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn .15s ease;
+    }
+
+    .bulk-num { font-family: var(--mono); font-size: 13px; color: var(--text2); letter-spacing: 1px; }
+    .bulk-cnam { font-family: var(--mono); font-size: 14px; color: var(--accent); font-weight: bold; }
+    .bulk-cnam.no-data { color: var(--yellow); }
+    .bulk-cnam.error { color: var(--warn); font-size: 12px; }
+    .bulk-cnam.pending { color: var(--text3); }
+
+    .bulk-spinner { width:12px; height:12px; border:2px solid var(--accent-dim); border-top-color:var(--accent); border-radius:50%; animation:spin .6s linear infinite; }
+
+    /* History */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--text3);
+      text-transform: uppercase;
+    }
+
+    .text-btn {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
+      background: none;
+      border: none;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: color .15s;
+    }
+
+    .text-btn:hover { color: var(--warn); }
+
+    .history-list { display: flex; flex-direction: column; gap: 5px; }
+
+    .history-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 9px 14px;
+      display: grid;
+      grid-template-columns: 160px 1fr auto;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+
+    .history-row:hover { border-color: var(--accent); }
+    .history-row .h-num { font-family: var(--mono); font-size: 12px; color: var(--text2); letter-spacing: 1px; }
+    .history-row .h-cnam { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+    .history-row .h-cnam.err { color: var(--warn); }
+    .history-row .h-cnam.no-data { color: var(--yellow); }
+    .history-row .h-time { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+
+    .history-section { display: none; margin-top: 4px; }
+
+    footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
+      letter-spacing: 1px;
+    }
+
+    footer a { color: var(--text3); text-decoration: none; }
+    footer a:hover { color: var(--accent); }
+
+    @media (max-width: 520px) {
+      .bulk-row, .history-row { grid-template-columns: 1fr 1fr; }
+      .bulk-row .bulk-spinner, .history-row .h-time { display: none; }
+      .input-group { flex-direction: column; }
+      .lookup-btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="logo">CNAM//TOOL</span>
+    <div class="topbar-divider"></div>
+    <span class="topbar-title">Voice Tech Utilities</span>
+  </div>
+  <div class="topbar-right">
+    <div class="status-dot"></div>
+    <span class="status-text">LIVE</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="page-header">
+    <h1>Caller ID <span>CNAM</span> Lookup</h1>
+    <p>Query freecnam.org for caller name data — single or bulk</p>
+  </div>
+
+  <!-- Mode tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tabSingle" onclick="setMode('single')">Single</button>
+    <button class="mode-tab" id="tabBulk"   onclick="setMode('bulk')">Bulk</button>
+  </div>
+
+  <!-- Single lookup -->
+  <div id="singleSection">
+    <div class="lookup-card">
+      <div class="lookup-label">// Enter Phone Number</div>
+      <div class="input-group">
+        <div class="input-wrap">
+          <span class="input-icon">+</span>
+          <input type="tel" id="phoneInput" placeholder="12125551234" maxlength="15" autocomplete="off" spellcheck="false"/>
+        </div>
+        <button class="lookup-btn" id="lookupBtn" onclick="doLookup()">Lookup</button>
+      </div>
+      <div class="input-hint">Digits only — include country code &nbsp;(e.g. 12125551234)</div>
+    </div>
+
+    <div class="result-box" id="resultBox">
+      <div class="result-bar">
+        <span class="result-bar-left">CNAM RESPONSE</span>
+        <span class="pill" id="statusPill"></span>
+      </div>
+      <div id="resultInner"></div>
+    </div>
+  </div>
+
+  <!-- Bulk lookup -->
+  <div class="bulk-section" id="bulkSection">
+    <div class="lookup-card">
+      <div class="lookup-label">// Paste Numbers (one per line)</div>
+      <textarea id="bulkInput" placeholder="12125551234&#10;18005551234&#10;14155552671" rows="5"></textarea>
+      <br/>
+      <button class="bulk-btn" id="bulkBtn" onclick="doBulk()">Run Bulk Lookup</button>
+    </div>
+    <div class="bulk-results" id="bulkResults"></div>
+  </div>
+
+  <!-- History -->
+  <div class="history-section" id="historySection">
+    <div class="section-header">
+      <span class="section-title">// Recent Lookups</span>
+      <button class="text-btn" onclick="clearHistory()">Clear</button>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <footer>
+    <span>CNAM data via <a href="https://freecnam.org" target="_blank">freecnam.org</a></span>
+    <span id="footerCount">0 lookups this session</span>
+  </footer>
+
+</div>
+
+<script>
+  var history = [];
+  var sessionCount = 0;
+  var currentMode = 'single';
+
+  // Input setup
+  document.getElementById('phoneInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doLookup();
+  });
+  document.getElementById('phoneInput').addEventListener('input', function() {
+    this.value = this.value.replace(/\D/g, '');
+  });
+
+  function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('tabSingle').classList.toggle('active', mode === 'single');
+    document.getElementById('tabBulk').classList.toggle('active', mode === 'bulk');
+    document.getElementById('singleSection').style.display = mode === 'single' ? 'block' : 'none';
+    document.getElementById('bulkSection').classList.toggle('visible', mode === 'bulk');
+  }
+
+  // Single lookup
+  async function doLookup() {
+    var num = document.getElementById('phoneInput').value.trim();
+    if (!num) {
+      flash(document.getElementById('phoneInput'));
+      return;
+    }
+
+    var btn         = document.getElementById('lookupBtn');
+    var resultBox   = document.getElementById('resultBox');
+    var resultInner = document.getElementById('resultInner');
+    var statusPill  = document.getElementById('statusPill');
+
+    btn.disabled = true;
+    btn.textContent = 'Querying...';
+    resultBox.classList.add('visible');
+    statusPill.className = 'pill';
+    statusPill.textContent = '';
+    resultInner.innerHTML = '<div class="loading-row"><div class="spinner"></div>QUERYING FREECNAM.ORG...</div>';
+
+    var result = await fetchCnam(num);
+
+    if (result.ok) {
+      var display = result.cnam || 'NO DATA';
+      var isNoData = !result.cnam;
+
+      statusPill.className = 'pill ' + (isNoData ? 'pill-none' : 'pill-ok');
+      statusPill.textContent = isNoData ? 'NO DATA' : '200 OK';
+
+      resultInner.innerHTML =
+        '<div class="result-body">' +
+          '<div class="result-number-label">NUMBER</div>' +
+          '<div class="result-number-val">+' + esc(num) + '</div>' +
+          '<div class="cnam-label">CALLER NAME (CNAM)</div>' +
+          '<div class="cnam-value' + (isNoData ? ' no-data' : '') + '">' + esc(display.toUpperCase()) + '</div>' +
+          '<div class="meta-grid">' +
+            '<div class="meta-cell"><p>Endpoint</p><code>freecnam.org/dip</code></div>' +
+            '<div class="meta-cell"><p>Raw Response</p><code>' + esc(display) + '</code></div>' +
+          '</div>' +
+        '</div>';
+
+      addHistory(num, display.toUpperCase(), isNoData ? 'no-data' : 'ok');
+    } else {
+      statusPill.className = 'pill pill-err';
+      statusPill.textContent = 'ERROR';
+      resultInner.innerHTML =
+        '<div class="result-body">' +
+          '<div class="result-number-label">NUMBER</div>' +
+          '<div class="result-number-val">+' + esc(num) + '</div>' +
+          '<div class="cnam-label">ERROR</div>' +
+          '<div class="cnam-value error">' + esc(result.error) + '</div>' +
+        '</div>';
+      addHistory(num, 'ERROR', 'err');
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Lookup';
+  }
+
+  // Bulk lookup
+  async function doBulk() {
+    var raw = document.getElementById('bulkInput').value.trim();
+    if (!raw) return;
+
+    var numbers = raw.split('\n')
+      .map(function(l) { return l.trim().replace(/\D/g, ''); })
+      .filter(function(n) { return n.length >= 7; });
+
+    if (!numbers.length) return;
+
+    var btn = document.getElementById('bulkBtn');
+    var container = document.getElementById('bulkResults');
+    btn.disabled = true;
+    btn.textContent = 'Running...';
+    container.innerHTML = '';
+
+    // Render all rows as pending first
+    numbers.forEach(function(num, i) {
+      var row = document.createElement('div');
+      row.className = 'bulk-row';
+      row.id = 'bulk-row-' + i;
+      row.innerHTML =
+        '<span class="bulk-num">+' + esc(num) + '</span>' +
+        '<span class="bulk-cnam pending" id="bulk-cnam-' + i + '">QUERYING...</span>' +
+        '<div class="bulk-spinner" id="bulk-spin-' + i + '"></div>';
+      container.appendChild(row);
+    });
+
+    // Fire requests sequentially to respect rate limits
+    for (var i = 0; i < numbers.length; i++) {
+      var num = numbers[i];
+      var cnamEl = document.getElementById('bulk-cnam-' + i);
+      var spinEl = document.getElementById('bulk-spin-' + i);
+
+      var result = await fetchCnam(num);
+
+      spinEl.style.display = 'none';
+
+      if (result.ok) {
+        var display = result.cnam ? result.cnam.toUpperCase() : 'NO DATA';
+        var cls = result.cnam ? '' : ' no-data';
+        cnamEl.className = 'bulk-cnam' + cls;
+        cnamEl.textContent = display;
+        addHistory(num, display, result.cnam ? 'ok' : 'no-data');
+      } else {
+        cnamEl.className = 'bulk-cnam error';
+        cnamEl.textContent = 'ERROR';
+        addHistory(num, 'ERROR', 'err');
+      }
+
+      // Small delay between requests
+      if (i < numbers.length - 1) {
+        await sleep(300);
+      }
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Run Bulk Lookup';
+  }
+
+  // Core fetch — calls the Vercel serverless function
+  async function fetchCnam(num) {
+    try {
+      var resp = await fetch('/api/cnam?q=' + encodeURIComponent(num));
+      if (!resp.ok) {
+        var errText = await resp.text();
+        return { ok: false, error: 'HTTP ' + resp.status + ': ' + errText };
+      }
+      var text = (await resp.text()).trim();
+      sessionCount++;
+      document.getElementById('footerCount').textContent = sessionCount + ' lookup' + (sessionCount !== 1 ? 's' : '') + ' this session';
+      return { ok: true, cnam: text };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  }
+
+  // History
+  function addHistory(num, cnam, type) {
+    var now = new Date();
+    var time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
+    history.unshift({ num: num, cnam: cnam, type: type, time: time });
+    renderHistory();
+  }
+
+  function renderHistory() {
+    var section = document.getElementById('historySection');
+    var list    = document.getElementById('historyList');
+    section.style.display = history.length ? 'block' : 'none';
+    var html = '';
+    history.slice(0, 20).forEach(function(h) {
+      html +=
+        '<div class="history-row" onclick="reLookup(\'' + esc(h.num) + '\')">' +
+          '<span class="h-num">+' + esc(h.num) + '</span>' +
+          '<span class="h-cnam ' + (h.type === 'err' ? 'err' : h.type === 'no-data' ? 'no-data' : '') + '">' + esc(h.cnam) + '</span>' +
+          '<span class="h-time">' + esc(h.time) + '</span>' +
+        '</div>';
+    });
+    list.innerHTML = html;
+  }
+
+  function reLookup(num) {
+    setMode('single');
+    document.getElementById('phoneInput').value = num;
+    doLookup();
+  }
+
+  function clearHistory() {
+    history = [];
+    renderHistory();
+  }
+
+  function flash(el) {
+    el.style.borderColor = 'var(--warn)';
+    el.style.boxShadow = '0 0 0 3px var(--warn-dim)';
+    setTimeout(function() { el.style.borderColor = ''; el.style.boxShadow = ''; }, 700);
+  }
+
+  function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+</script>
+</body>
+</html>
